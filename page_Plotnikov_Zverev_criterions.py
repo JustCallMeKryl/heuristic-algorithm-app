@@ -230,7 +230,7 @@ def app():
         matrix_option = st.selectbox(
             "Выберите источник матрицы:",
             ("", "Генерация новой матрицы", "Матрица задана"),
-            key="matrix_option_extra_minimax",  # уникальный ключ для каждого алгоритма
+            key="matrix_option_extra_minimax",
             on_change=reset_state
         )
 
