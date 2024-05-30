@@ -149,11 +149,10 @@ def kernel_parent_child_comparison(i_number, individual_phenotypes, individual_p
             two_individual_second_line[min_index].astype(np.int32))
 
 
-def initialize_algorithm(Z, m, n):
-    second_line_individual = np.random.randint(0, 256, (Z, m)).astype(np.int32)
+def initialize_algorithm(Z, m):
     two_individual_second_line = np.zeros((2, m), dtype=np.int32)
     second_line_individual_for_rounds = np.zeros((Z, m), dtype=np.int32)
-    return second_line_individual, two_individual_second_line, second_line_individual_for_rounds
+    return two_individual_second_line, second_line_individual_for_rounds
 
 
 def initialize_tracking():
@@ -199,9 +198,8 @@ def finalize_tracking(progress_log_Goldberg, start_time, end_time, second_line_i
     )
 
 
-def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix):
-    second_line_individual, two_individual_second_line, second_line_individual_for_rounds = initialize_algorithm(Z, m,
-                                                                                                                 n)
+def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix, number_of_alg, second_line_individual):
+    two_individual_second_line, second_line_individual_for_rounds = initialize_algorithm(Z, m)
     top_counter, counter_individual, best_phenotype_for_top_counter, progress_log_Goldberg, progress_placeholder = initialize_tracking()
 
     start_time = time.perf_counter()
@@ -218,8 +216,7 @@ def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix):
             top_counter = np.int32(1)
             counter_individual = np.int32(1)
 
-        kernel_phenotype_detection(Z, m, n, scope_matrix, second_line_individual, sorted_matrix,
-                                   individual_phenotypes)
+        kernel_phenotype_detection(Z, m, n, scope_matrix, second_line_individual, sorted_matrix, individual_phenotypes)
         best_phenotype_for_top_counter = np.min(individual_phenotypes)
 
         if counter_individual == 1:
@@ -326,53 +323,42 @@ def reset_state():
     initialize_state()
 
 
-def find_minimax_criterion():
-    minimax_criterion_number_distribution = np.zeros((st.session_state["m"], st.session_state["n"]),
-                                                     dtype=np.int32)  # распределение чисел по приборам
-    minimax_criterion_one_dimensional_array_loads = np.zeros(st.session_state["n"],
-                                                             dtype=np.int32)  # одномерный массив нагрузки
+def find_minimax_criterion(second_line_individual, scope_matrix, sorted_matrix, m, n, Z):
+    minimax_criterion_number_distribution = np.zeros((m, n), dtype=np.int32)
+    minimax_criterion_one_dimensional_array_loads = np.zeros(n, dtype=np.int32)
 
-    for i_m in range(st.session_state["m"]):
-        min_val = np.iinfo(np.int32).max  # Используем максимально возможное значение для int32
+    for i_m in range(m):
+        min_val = np.iinfo(np.int32).max
         min_index = -1
 
-        for j_n in range(st.session_state["n"]):
-            # переменная обхода
-            traversal_variable = st.session_state["sorted_matrix"][i_m, j_n] + \
-                                 minimax_criterion_one_dimensional_array_loads[j_n]
+        for j_n in range(n):
+            traversal_variable = sorted_matrix[i_m, j_n] + minimax_criterion_one_dimensional_array_loads[j_n]
 
-            # Нахождение минимального элемента в строке и его индекса
             if traversal_variable < min_val:
                 min_val, min_index = traversal_variable, j_n
 
-        # Обновляем сумму минимальных элементов по их индексам в matrix_min_element_method
         minimax_criterion_one_dimensional_array_loads[min_index] = np.int32(min_val)
-        # записываем числа для просмотра распределения
-        minimax_criterion_number_distribution[i_m, min_index] = np.int32(
-            st.session_state["sorted_matrix"][i_m, min_index])
+        minimax_criterion_number_distribution[i_m, min_index] = np.int32(sorted_matrix[i_m, min_index])
 
-        for k_z in range(st.session_state["Z"]):
-            random_number = np.random.randint(st.session_state["scope_matrix"][min_index * 2],
-                                              st.session_state["scope_matrix"][min_index * 2 + 1] + 1)
-            st.session_state["second_line_individual"][k_z, i_m] = random_number
+        for k_z in range(Z):
+            random_number = np.random.randint(scope_matrix[min_index * 2], scope_matrix[min_index * 2 + 1] + 1)
+            second_line_individual[k_z, i_m] = random_number
 
     max_load = np.max(minimax_criterion_one_dimensional_array_loads)
     return minimax_criterion_number_distribution, max_load
 
 
-def find_extra_minimax_criterion(barrier_min_numbers: int):
+def find_extra_minimax_criterion(barrier_min_numbers: int, second_line_individual, scope_matrix):
     index_for_extra, end_index_need_matrix = 0, 0
 
-    extra_minimax_criterion_one_dimensional_array_loads = np.zeros(st.session_state["n"],
-                                                                   dtype=np.int32)  # одномерный массив нагрузки
-    extra_minimax_criterion_additional_matrix = np.zeros((st.session_state["m"], st.session_state["n"]),
-                                                         dtype=np.int32)  # дополнительная матрица
+    extra_minimax_criterion_one_dimensional_array_loads = np.zeros(st.session_state["n"], dtype=np.int32)
+    extra_minimax_criterion_additional_matrix = np.zeros((st.session_state["m"], st.session_state["n"]), dtype=np.int32)
     extra_minimax_criterion_number_distribution = np.zeros((st.session_state["m"], st.session_state["n"]),
-                                                           dtype=np.int32)  # распределение чисел по приборам
-    extra_minimax_criterion_i_m_indices = []  # сохранение выпадающих индексов для построения генотипов
+                                                           dtype=np.int32)
+    extra_minimax_criterion_i_m_indices = []
 
     for i_m in range(st.session_state["m"]):
-        min_val = np.iinfo(np.int32).max  # Используем максимально возможное значение для int32
+        min_val = np.iinfo(np.int32).max
         min_index = -1
 
         for j_n in range(st.session_state["n"]):
@@ -387,20 +373,17 @@ def find_extra_minimax_criterion(barrier_min_numbers: int):
             extra_minimax_criterion_number_distribution[index_for_extra, min_index] = min_val
 
             for k_z in range(st.session_state["Z"]):
-                random_number = np.random.randint(st.session_state["scope_matrix"][min_index * 2],
-                                                  st.session_state["scope_matrix"][min_index * 2 + 1] + 1)
-                # закидываю по изначальному индексу i_m, чтобы распределение чисел в особи соответствовало
-                # матрице, которая отсортирована в порядке убывания сумм строк
-                st.session_state["second_line_individual"][k_z, i_m] = random_number
+                random_number = np.random.randint(scope_matrix[min_index * 2], scope_matrix[min_index * 2 + 1] + 1)
+                second_line_individual[k_z, i_m] = random_number
 
             index_for_extra += 1
         else:
             extra_minimax_criterion_additional_matrix[end_index_need_matrix] = st.session_state["sorted_matrix"][i_m]
-            extra_minimax_criterion_i_m_indices.append(i_m)  # сохраняем пропущенный индекс
+            extra_minimax_criterion_i_m_indices.append(i_m)
             end_index_need_matrix += 1
 
     for i_e in range(end_index_need_matrix):
-        min_val = np.iinfo(np.int32).max  # Используем максимально возможное значение для int32
+        min_val = np.iinfo(np.int32).max
         min_index = -1
 
         for j_n in range(st.session_state["n"]):
@@ -412,12 +395,11 @@ def find_extra_minimax_criterion(barrier_min_numbers: int):
 
         extra_minimax_criterion_one_dimensional_array_loads[min_index] = min_val
         extra_minimax_criterion_number_distribution[index_for_extra, min_index] = \
-            extra_minimax_criterion_additional_matrix[i_e, min_index]
+        extra_minimax_criterion_additional_matrix[i_e, min_index]
 
         for k_z in range(st.session_state["Z"]):
-            random_number = np.random.randint(st.session_state["scope_matrix"][min_index * 2],
-                                              st.session_state["scope_matrix"][min_index * 2 + 1] + 1)
-            st.session_state["second_line_individual"][k_z, extra_minimax_criterion_i_m_indices[i_e]] = random_number
+            random_number = np.random.randint(scope_matrix[min_index * 2], scope_matrix[min_index * 2 + 1] + 1)
+            second_line_individual[k_z, extra_minimax_criterion_i_m_indices[i_e]] = random_number
 
         index_for_extra += 1
 
@@ -518,9 +500,13 @@ def app():
 
         if st.session_state.get("generation_method") == "Рандомные особи":
             if st.button("Начать работу"):
+                second_line_individual = np.random.randint(0, 256,
+                                                           (st.session_state["Z"], st.session_state["m"])).astype(
+                    np.int32)
                 run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                               st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
-                              st.session_state["sorted_matrix"], st.session_state["scope_matrix"])
+                              st.session_state["sorted_matrix"], st.session_state["scope_matrix"], 0,
+                              second_line_individual)
                 st.session_state["progress_log_Goldberg"].append("Алгоритм завершен.")
                 st.experimental_rerun()
 
@@ -535,10 +521,12 @@ def app():
             if st.session_state.get("algorithm_option"):
                 if st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию":
                     st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию...")
-                    st.session_state["second_line_individual"], _, _ = initialize_algorithm(st.session_state["Z"],
-                                                                                            st.session_state["m"],
-                                                                                            st.session_state["n"])
-                    minimax_criterion_number_distribution, max_load = find_minimax_criterion()
+
+                    second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
+                    minimax_criterion_number_distribution, max_load = find_minimax_criterion(
+                        second_line_individual, st.session_state["scope_matrix"], st.session_state["sorted_matrix"],
+                        st.session_state["m"], st.session_state["n"], st.session_state["Z"]
+                    )
 
                     col1, col2, col3 = st.columns(3)
 
@@ -556,30 +544,32 @@ def app():
 
                     st.markdown(
                         f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
-                        unsafe_allow_html=True)
+                        unsafe_allow_html=True
+                    )
 
                     choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1,
                                                           max_value=99, value=10, key="choice_slice_number_minimax")
 
                     if st.button("Подтвердить и начать алгоритм"):
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
-                        st.session_state["second_line_individual"][:slice_number] = np.random.randint(0, 256, (
+                        second_line_individual[:slice_number] = np.random.randint(0, 256, (
                         slice_number, st.session_state["m"])).astype(np.int32)
 
                         run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                                       st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
-                                      st.session_state["sorted_matrix"], st.session_state["scope_matrix"])
+                                      st.session_state["sorted_matrix"], st.session_state["scope_matrix"], 1,
+                                      second_line_individual)
 
-                if st.session_state[
+                elif st.session_state[
                     "algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
                     st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию с барьером...")
-                    st.session_state["second_line_individual"], _, _ = initialize_algorithm(st.session_state["Z"],
-                                                                                            st.session_state["m"],
-                                                                                            st.session_state["n"])
+
+                    second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     min_elements = np.min(st.session_state["sorted_matrix"], axis=1)
                     sum_of_min_elements = (np.sum(min_elements) // st.session_state["n"]) + 1
                     extra_minimax_criterion_number_distribution, max_load = find_extra_minimax_criterion(
-                        sum_of_min_elements)
+                        sum_of_min_elements, second_line_individual, st.session_state["scope_matrix"]
+                    )
 
                     col1, col2, col3 = st.columns(3)
 
@@ -597,7 +587,8 @@ def app():
 
                     st.markdown(
                         f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
-                        unsafe_allow_html=True)
+                        unsafe_allow_html=True
+                    )
 
                     choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1,
                                                           max_value=99, value=10,
@@ -605,12 +596,13 @@ def app():
 
                     if st.button("Подтвердить и начать алгоритм"):
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
-                        st.session_state["second_line_individual"][:slice_number] = np.random.randint(0, 256, (
+                        second_line_individual[:slice_number] = np.random.randint(0, 256, (
                         slice_number, st.session_state["m"])).astype(np.int32)
 
                         run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                                       st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
-                                      st.session_state["sorted_matrix"], st.session_state["scope_matrix"])
+                                      st.session_state["sorted_matrix"], st.session_state["scope_matrix"], 1,
+                                      second_line_individual)
 
 
 if __name__ == "__main__":
