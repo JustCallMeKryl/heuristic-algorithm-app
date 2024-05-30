@@ -304,46 +304,23 @@ def download_files_as_zip(log_file_content, distribution_file_content):
 
 
 def initialize_state():
+    keys = ["generation_method_selected", "original_matrix", "sorted_matrix", "scope_matrix", "m", "n", "Z", "Zi", "Pk",
+            "Pm", "generation_method", "algorithm_option", "second_line_individual"]
+    for key in keys:
+        if key not in st.session_state:
+            st.session_state[key] = None
+    if "initialized" not in st.session_state:
+        st.session_state["initialized"] = True
     if "generation_method_selected" not in st.session_state:
         st.session_state["generation_method_selected"] = False
-
-    if "original_matrix" not in st.session_state:
-        st.session_state["original_matrix"] = None
-
-    if "sorted_matrix" not in st.session_state:
-        st.session_state["sorted_matrix"] = None
-
-    if "scope_matrix" not in st.session_state:
-        st.session_state["scope_matrix"] = None
-
-    if "m" not in st.session_state:
-        st.session_state["m"] = None
-
-    if "n" not in st.session_state:
-        st.session_state["n"] = None
-
-    if "Z" not in st.session_state:
-        st.session_state["Z"] = None
-
-    if "Zi" not in st.session_state:
-        st.session_state["Zi"] = None
-
-    if "Pk" not in st.session_state:
-        st.session_state["Pk"] = None
-
-    if "Pm" not in st.session_state:
-        st.session_state["Pm"] = None
-
-    if "generation_method" not in st.session_state:
-        st.session_state["generation_method"] = None
-
-    if "algorithm_option" not in st.session_state:
-        st.session_state["algorithm_option"] = None
+    if "progress_log_Goldberg" not in st.session_state:
+        st.session_state["progress_log_Goldberg"] = []
 
 
 def reset_state():
-    for key in ["generation_method_selected", "original_matrix", "sorted_matrix", "scope_matrix", "m", "n", "Z", "Zi",
-                "Pk", "Pm", "generation_method", "algorithm_option"]:
+    keys = ["generation_method_selected", "original_matrix", "sorted_matrix", "scope_matrix", "m", "n", "Z", "Zi", "Pk",
+            "Pm", "generation_method", "algorithm_option", "second_line_individual", "progress_log_Goldberg"]
+    for key in keys:
         if key in st.session_state:
             del st.session_state[key]
     initialize_state()
@@ -449,28 +426,34 @@ def find_extra_minimax_criterion(barrier_min_numbers: int):
 
 
 def app():
-    # Инициализация состояния при первом запуске
     if "initialized" not in st.session_state:
         reset_state()
-        st.session_state["initialized"] = True
+
+    def reset_on_change():
+        keys_to_reset = [
+            "original_matrix", "sorted_matrix", "scope_matrix", "m", "n", "Z", "Zi", "Pk", "Pm",
+            "generation_method_selected", "generation_method", "algorithm_option"
+        ]
+        for key in keys_to_reset:
+            if key in st.session_state:
+                del st.session_state[key]
 
     st.title('Алгоритм П-З + Голдберга')
 
-    matrix_option = st.selectbox("Выберите источник матрицы:",
-                                 ("", "Генерация новой матрицы", "Матрица задана"),
-                                 on_change=reset_state)
+    matrix_option = st.selectbox("Выберите источник матрицы:", ("", "Генерация новой матрицы", "Матрица задана"))
 
     if matrix_option == "Генерация новой матрицы":
-        m = st.number_input("Количество строк матрицы (m)", min_value=1, value=20, step=1, on_change=reset_state)
-        n = st.number_input("Количество столбцов матрицы (n)", min_value=1, value=3, step=1, on_change=reset_state)
-        T1 = st.number_input("Начало диапазона значений (T1)", min_value=1, value=10, step=1, on_change=reset_state)
-        T2 = st.number_input("Конец диапазона значений (T2)", min_value=T1 + 1, value=20, step=1, on_change=reset_state)
-        Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1, on_change=reset_state)
-        Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1, on_change=reset_state)
+        m = st.number_input("Количество строк матрицы (m)", min_value=1, value=20, step=1, on_change=reset_on_change)
+        n = st.number_input("Количество столбцов матрицы (n)", min_value=1, value=3, step=1, on_change=reset_on_change)
+        T1 = st.number_input("Начало диапазона значений (T1)", min_value=1, value=10, step=1, on_change=reset_on_change)
+        T2 = st.number_input("Конец диапазона значений (T2)", min_value=T1 + 1, value=20, step=1,
+                             on_change=reset_on_change)
+        Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1, on_change=reset_on_change)
+        Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1, on_change=reset_on_change)
         Pk = st.number_input("Вероятность кроссовера (Pk)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
-                             on_change=reset_state)
+                             on_change=reset_on_change)
         Pm = st.number_input("Вероятность мутации (Pm)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
-                             on_change=reset_state)
+                             on_change=reset_on_change)
 
         if st.button("Сгенерировать матрицу"):
             original_matrix, sorted_matrix = generate_matrix(m, n, T1, T2)
@@ -489,7 +472,7 @@ def app():
             st.session_state["generation_method_selected"] = True
 
     elif matrix_option == "Матрица задана":
-        uploaded_file = st.file_uploader("Загрузите файл матрицы", type="txt", on_change=reset_state)
+        uploaded_file = st.file_uploader("Загрузите файл матрицы", type="txt")
         if uploaded_file is not None:
             matrix_of_all_iterations = process_uploaded_file(uploaded_file)
             if matrix_of_all_iterations is not None:
@@ -498,12 +481,14 @@ def app():
                 scope_matrix = np.zeros(2 * n, dtype=np.int32)
                 find_scope_matrix(n, scope_matrix)
 
-                Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1, on_change=reset_state)
-                Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1, on_change=reset_state)
+                Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1,
+                                    on_change=reset_on_change)
+                Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1,
+                                     on_change=reset_on_change)
                 Pk = st.number_input("Вероятность кроссовера (Pk)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
-                                     on_change=reset_state)
+                                     on_change=reset_on_change)
                 Pm = st.number_input("Вероятность мутации (Pm)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
-                                     on_change=reset_state)
+                                     on_change=reset_on_change)
 
                 if st.button("Продолжить"):
                     st.session_state["original_matrix"] = matrix_of_all_iterations
@@ -516,22 +501,30 @@ def app():
                     st.session_state["Pk"] = Pk
                     st.session_state["Pm"] = Pm
                     st.session_state["generation_method_selected"] = True
+        else:
+            if "generation_method_selected" in st.session_state:
+                del st.session_state["generation_method_selected"]
+            if "generation_method" in st.session_state:
+                del st.session_state["generation_method"]
+            if "algorithm_option" in st.session_state:
+                del st.session_state["algorithm_option"]
 
-    if st.session_state["generation_method_selected"]:
+    if st.session_state.get("generation_method_selected"):
         generation_method = st.selectbox("Выберите метод генерации особей:",
                                          ("", "Рандомные особи", "Генерация особей с помощью Плотникова-Зверева"))
 
         if generation_method:
             st.session_state["generation_method"] = generation_method
 
-        if st.session_state["generation_method"] == "Рандомные особи":
+        if st.session_state.get("generation_method") == "Рандомные особи":
             if st.button("Начать работу"):
                 run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                               st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
                               st.session_state["sorted_matrix"], st.session_state["scope_matrix"])
-                reset_state()
+                st.session_state["progress_log_Goldberg"].append("Алгоритм завершен.")
+                st.experimental_rerun()
 
-        elif st.session_state["generation_method"] == "Генерация особей с помощью Плотникова-Зверева":
+        elif st.session_state.get("generation_method") == "Генерация особей с помощью Плотникова-Зверева":
             algorithm_option = st.selectbox("Выберите алгоритм Плотникова-Зверева:",
                                             ("", "Алгоритм Плотникова-Зверева по минимаксному критерию",
                                              "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером"))
@@ -539,67 +532,85 @@ def app():
             if algorithm_option:
                 st.session_state["algorithm_option"] = algorithm_option
 
-            if st.session_state["algorithm_option"]:
-                if st.button("Начать работу"):
-                    if st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию":
-                        st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию...")
-                        st.session_state["second_line_individual"], _, _ = initialize_algorithm(st.session_state["Z"],
-                                                                                                st.session_state["m"],
-                                                                                                st.session_state["n"])
-                        minimax_criterion_number_distribution, max_load = find_minimax_criterion()
+            if st.session_state.get("algorithm_option"):
+                if st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию":
+                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию...")
+                    st.session_state["second_line_individual"], _, _ = initialize_algorithm(st.session_state["Z"],
+                                                                                            st.session_state["m"],
+                                                                                            st.session_state["n"])
+                    minimax_criterion_number_distribution, max_load = find_minimax_criterion()
 
-                        col1, col2, col3 = st.columns(3)
+                    col1, col2, col3 = st.columns(3)
 
-                        with col1:
-                            st.write("Изначальная матрица")
-                            st.write(st.session_state["original_matrix"])
+                    with col1:
+                        st.write("Изначальная матрица")
+                        st.write(st.session_state["original_matrix"])
 
-                        with col2:
-                            st.write("Отсортированная матрица")
-                            st.write(st.session_state["sorted_matrix"])
+                    with col2:
+                        st.write("Отсортированная матрица")
+                        st.write(st.session_state["sorted_matrix"])
 
-                        with col3:
-                            st.write("Распределение чисел (minimax)")
-                            st.write(minimax_criterion_number_distribution)
+                    with col3:
+                        st.write("Распределение чисел (minimax)")
+                        st.write(minimax_criterion_number_distribution)
 
-                        st.markdown(
-                            f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
-                            unsafe_allow_html=True)
+                    st.markdown(
+                        f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
+                        unsafe_allow_html=True)
 
-                        st.write("Алгоритм Плотникова-Зверева по минимаксному критерию выполнен.")
-                        reset_state()
+                    choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1,
+                                                          max_value=99, value=10, key="choice_slice_number_minimax")
 
-                    if st.session_state[
-                        "algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
-                        st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию с барьером...")
+                    if st.button("Подтвердить и начать алгоритм"):
+                        slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
+                        st.session_state["second_line_individual"][:slice_number] = np.random.randint(0, 256, (
+                        slice_number, st.session_state["m"])).astype(np.int32)
 
-                        st.session_state["second_line_individual"], _, _ = initialize_algorithm(st.session_state["Z"],
-                                                                                                st.session_state["m"],
-                                                                                                st.session_state["n"])
+                        run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
+                                      st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
+                                      st.session_state["sorted_matrix"], st.session_state["scope_matrix"])
 
-                        min_elements = np.min(st.session_state["sorted_matrix"], axis=1)  # находим минимальные элементы в каждой строке
-                        sum_of_min_elements = (np.sum(min_elements) // st.session_state["n"]) + 1  # находим барьер
-                        extra_minimax_criterion_number_distribution, max_load = find_extra_minimax_criterion(
-                            sum_of_min_elements)
+                if st.session_state[
+                    "algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
+                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию с барьером...")
+                    st.session_state["second_line_individual"], _, _ = initialize_algorithm(st.session_state["Z"],
+                                                                                            st.session_state["m"],
+                                                                                            st.session_state["n"])
+                    min_elements = np.min(st.session_state["sorted_matrix"], axis=1)
+                    sum_of_min_elements = (np.sum(min_elements) // st.session_state["n"]) + 1
+                    extra_minimax_criterion_number_distribution, max_load = find_extra_minimax_criterion(
+                        sum_of_min_elements)
 
-                        col1, col2, col3 = st.columns(3)
+                    col1, col2, col3 = st.columns(3)
 
-                        with col1:
-                            st.write("Изначальная матрица")
-                            st.write(st.session_state["original_matrix"])
-                        with col2:
-                            st.write("Отсортированная матрица")
-                            st.write(st.session_state["sorted_matrix"])
-                        with col3:
-                            st.write("Распределение чисел (extra minimax)")
-                            st.write(extra_minimax_criterion_number_distribution)
+                    with col1:
+                        st.write("Изначальная матрица")
+                        st.write(st.session_state["original_matrix"])
 
-                        st.markdown(
-                            f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
-                            unsafe_allow_html=True)
+                    with col2:
+                        st.write("Отсортированная матрица")
+                        st.write(st.session_state["sorted_matrix"])
 
-                        st.write("Алгоритм Плотникова-Зверева по минимаксному критерию с барьером выполнен.")
-                        reset_state()
+                    with col3:
+                        st.write("Распределение чисел (extra minimax)")
+                        st.write(extra_minimax_criterion_number_distribution)
+
+                    st.markdown(
+                        f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
+                        unsafe_allow_html=True)
+
+                    choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1,
+                                                          max_value=99, value=10,
+                                                          key="choice_slice_number_extra_minimax")
+
+                    if st.button("Подтвердить и начать алгоритм"):
+                        slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
+                        st.session_state["second_line_individual"][:slice_number] = np.random.randint(0, 256, (
+                        slice_number, st.session_state["m"])).astype(np.int32)
+
+                        run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
+                                      st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
+                                      st.session_state["sorted_matrix"], st.session_state["scope_matrix"])
 
 
 if __name__ == "__main__":
