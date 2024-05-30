@@ -1,5 +1,7 @@
 import streamlit as st
 import numpy as np
+import io
+import zipfile
 
 
 def find_minimax_criterion(m_number, n_number, original_matrix_number):
@@ -100,41 +102,40 @@ def display_matrices():
             st.write("Сгенерированная матрица")
             st.write(original_matrix)
 
-            matrix_str = '\n'.join(' '.join(map(str, row)) for row in original_matrix)
-            st.download_button(
-                label="Скачать",
-                data=matrix_str,
-                file_name='matrix.txt',
-                mime='text/plain'
-            )
-
         with col2:
             st.write("Отсортированная матрица")
             st.write(sorted_matrix)
-
-            matrix_str = '\n'.join(' '.join(map(str, row)) for row in sorted_matrix)
-            st.download_button(
-                label="Скачать",
-                data=matrix_str,
-                file_name='sorted_matrix.txt',
-                mime='text/plain'
-            )
 
         with col3:
             st.write("Распределение по приборам")
             st.write(minimax_criterion_number_distribution)
 
-            matrix_str = '\n'.join(' '.join(map(str, row)) for row in minimax_criterion_number_distribution)
-            st.download_button(
-                label="Скачать",
-                data=matrix_str,
-                file_name='distribution.txt',
-                mime='text/plain'
-            )
-
         st.markdown(
-            f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
-            unsafe_allow_html=True)
+            f"<p style='font-size:24px; font-weight:bold; text-align: center; margin-left: -60px;'>MAX из массива нагрузки: {max_load}</p>",
+            unsafe_allow_html=True
+        )
+
+        # Создание ZIP файла в памяти
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+            matrix_str = '\n'.join(' '.join(map(str, row)) for row in original_matrix)
+            zip_file.writestr("original_matrix.txt", matrix_str)
+
+            matrix_str = '\n'.join(' '.join(map(str, row)) for row in sorted_matrix)
+            zip_file.writestr("sorted_matrix.txt", matrix_str)
+
+            matrix_str = '\n'.join(' '.join(map(str, row)) for row in minimax_criterion_number_distribution)
+            zip_file.writestr("distribution.txt", matrix_str)
+
+        zip_buffer.seek(0)
+
+        # Кнопка для скачивания ZIP файла
+        col2.download_button(
+            label="Скачать матрицы",
+            data=zip_buffer,
+            file_name='matrices.zip',
+            mime='application/zip'
+        )
 
 
 def process_uploaded_file(uploaded_file):
@@ -180,6 +181,27 @@ def process_file_content(algorithm):
         except ValueError:
             st.warning("Файл содержит недопустимые символы. Пожалуйста, загрузите файл, содержащий только числа.")
             reset_state()
+
+
+def download_matrices_as_zip(original_matrix, sorted_matrix, minimax_criterion_number_distribution):
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+        matrix_str = '\n'.join(' '.join(map(str, row)) for row in original_matrix)
+        zip_file.writestr("original_matrix.txt", matrix_str)
+
+        matrix_str = '\n'.join(' '.join(map(str, row)) for row in sorted_matrix)
+        zip_file.writestr("sorted_matrix.txt", matrix_str)
+
+        matrix_str = '\n'.join(' '.join(map(str, row)) for row in minimax_criterion_number_distribution)
+        zip_file.writestr("distribution.txt", matrix_str)
+
+    zip_buffer.seek(0)
+    st.download_button(
+        label="Скачать все матрицы в zip",
+        data=zip_buffer,
+        file_name='matrices.zip',
+        mime='application/zip'
+    )
 
 
 def app():

@@ -173,29 +173,38 @@ def track_progress(counter_individual, best_phenotype_for_top_counter, top_count
 
 def finalize_tracking(progress_log_Goldberg, start_time, end_time, second_line_individual, m, n, scope_matrix,
                       sorted_matrix, individual_phenotypes):
-    st.session_state['finalize_called'] = True
-    elapsed_time = end_time - start_time
-    hours, rem = divmod(elapsed_time, 3600)
-    minutes, seconds = divmod(rem, 60)
-    final_msg = f"\n{int(hours):02}:{int(minutes):02}:{seconds:05.2f}"
-    progress_log_Goldberg.append(final_msg)
+    if 'finalize_called' not in st.session_state:
+        st.session_state['finalize_called'] = True
+        elapsed_time = end_time - start_time
+        hours, rem = divmod(elapsed_time, 3600)
+        minutes, seconds = divmod(rem, 60)
+        final_msg = f"\n{int(hours):02}:{int(minutes):02}:{seconds:05.2f}"
+        progress_log_Goldberg.append(final_msg)
 
-    progress_distribution_file = kernel_phenotype_detection_and_save(len(second_line_individual), m, n, scope_matrix,
-                                                                     second_line_individual, sorted_matrix,
-                                                                     individual_phenotypes)
+        progress_distribution_file = kernel_phenotype_detection_and_save(len(second_line_individual), m, n,
+                                                                         scope_matrix,
+                                                                         second_line_individual, sorted_matrix,
+                                                                         individual_phenotypes)
 
-    st.write(final_msg)
+        st.session_state['progress_log'] = progress_log_Goldberg
+        st.session_state['distribution_file'] = progress_distribution_file
+        st.session_state['final_msg'] = final_msg
+        st.session_state['algorithm_completed'] = True
 
-    progress_Goldberg_file = "\n".join(progress_log_Goldberg)
+        zip_buffer = download_files_as_zip(progress_log_Goldberg, progress_distribution_file)
+        st.session_state['zip_buffer'] = zip_buffer
 
-    zip_buffer = download_files_as_zip(progress_Goldberg_file, progress_distribution_file)
+        # Вывод последнего сообщения лога и итогового сообщения с временем
+        st.write(progress_log_Goldberg[-2])  # Вывод предпоследнего сообщения, которое является последним результатом
+        st.write(final_msg)
 
-    st.download_button(
-        label="Скачать все файлы",
-        data=zip_buffer,
-        file_name="results.zip",
-        mime="application/zip"
-    )
+        st.download_button(
+            label="Скачать все файлы",
+            data=zip_buffer,
+            file_name="results.zip",
+            mime="application/zip",
+            key="final_download_button"
+        )
 
 
 def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix, number_of_alg, second_line_individual):
@@ -294,8 +303,8 @@ def process_uploaded_file(uploaded_file):
 def download_files_as_zip(log_file_content, distribution_file_content):
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
-        zip_file.writestr("progress_log.txt", log_file_content)
-        zip_file.writestr("distribution_list.txt", distribution_file_content)
+        zip_file.writestr("progress_log.txt", "\n".join(log_file_content))  # Преобразуем список в строку
+        zip_file.writestr("distribution_list.txt", distribution_file_content)  # Это уже строка
     zip_buffer.seek(0)
     return zip_buffer
 
@@ -395,7 +404,7 @@ def find_extra_minimax_criterion(barrier_min_numbers: int, second_line_individua
 
         extra_minimax_criterion_one_dimensional_array_loads[min_index] = min_val
         extra_minimax_criterion_number_distribution[index_for_extra, min_index] = \
-        extra_minimax_criterion_additional_matrix[i_e, min_index]
+            extra_minimax_criterion_additional_matrix[i_e, min_index]
 
         for k_z in range(st.session_state["Z"]):
             random_number = np.random.randint(scope_matrix[min_index * 2], scope_matrix[min_index * 2 + 1] + 1)
@@ -414,7 +423,8 @@ def app():
     def reset_on_change():
         keys_to_reset = [
             "original_matrix", "sorted_matrix", "scope_matrix", "m", "n", "Z", "Zi", "Pk", "Pm",
-            "generation_method_selected", "generation_method", "algorithm_option"
+            "generation_method_selected", "generation_method", "algorithm_option", "progress_log", "distribution_file",
+            "final_msg", "algorithm_completed", "zip_buffer", "finalize_called"
         ]
         for key in keys_to_reset:
             if key in st.session_state:
@@ -553,7 +563,7 @@ def app():
                     if st.button("Подтвердить и начать алгоритм"):
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
                         second_line_individual[:slice_number] = np.random.randint(0, 256, (
-                        slice_number, st.session_state["m"])).astype(np.int32)
+                            slice_number, st.session_state["m"])).astype(np.int32)
 
                         run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                                       st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
@@ -597,12 +607,21 @@ def app():
                     if st.button("Подтвердить и начать алгоритм"):
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
                         second_line_individual[:slice_number] = np.random.randint(0, 256, (
-                        slice_number, st.session_state["m"])).astype(np.int32)
+                            slice_number, st.session_state["m"])).astype(np.int32)
 
                         run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                                       st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
                                       st.session_state["sorted_matrix"], st.session_state["scope_matrix"], 1,
                                       second_line_individual)
+
+    if st.session_state.get('algorithm_completed'):
+        st.write(st.session_state['final_msg'])
+        st.download_button(
+            label="Скачать все файлы",
+            data=st.session_state['zip_buffer'],
+            file_name="results.zip",
+            mime="application/zip"
+        )
 
 
 if __name__ == "__main__":
