@@ -54,7 +54,7 @@ def kernel_phenotype_detection_and_save(Z, m, n, scope_matrix, second_line_indiv
     distribution_list = extra_minimax_criterion_number_distribution[max_index]
     phenotype_detection_list = phenotype_distribution_list[max_index]
 
-    distribution_file_content = f"Distribution List:\n{distribution_list}\n\nPhenotype Detection List:\n{phenotype_detection_list}"
+    distribution_file_content = f"- Распределение заданий по приборам -\n\n{distribution_list}\n\n{phenotype_detection_list}"
     return distribution_file_content
 
 
