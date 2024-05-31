@@ -194,18 +194,6 @@ def finalize_tracking(progress_log_Goldberg, start_time, end_time, second_line_i
         zip_buffer = download_files_as_zip(progress_log_Goldberg, progress_distribution_file)
         st.session_state['zip_buffer'] = zip_buffer
 
-        # Вывод последнего сообщения лога и итогового сообщения с временем
-        st.write(progress_log_Goldberg[-2])  # Вывод предпоследнего сообщения, которое является последним результатом
-        st.write(final_msg)
-
-        st.download_button(
-            label="Скачать все файлы",
-            data=zip_buffer,
-            file_name="results.zip",
-            mime="application/zip",
-            key="final_download_button"
-        )
-
 
 def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix, number_of_alg, second_line_individual):
     two_individual_second_line, second_line_individual_for_rounds = initialize_algorithm(Z, m)
@@ -416,6 +404,13 @@ def find_extra_minimax_criterion(barrier_min_numbers: int, second_line_individua
     return extra_minimax_criterion_number_distribution, max_load
 
 
+def reset_algorithm_state():
+    keys_to_reset = ["algorithm_completed", "progress_log", "final_msg", "zip_buffer"]
+    for key in keys_to_reset:
+        if key in st.session_state:
+            del st.session_state[key]
+
+
 def app():
     if "initialized" not in st.session_state:
         reset_state()
@@ -424,7 +419,7 @@ def app():
         keys_to_reset = [
             "original_matrix", "sorted_matrix", "scope_matrix", "m", "n", "Z", "Zi", "Pk", "Pm",
             "generation_method_selected", "generation_method", "algorithm_option", "progress_log", "distribution_file",
-            "final_msg", "algorithm_completed", "zip_buffer", "finalize_called"
+            "final_msg", "algorithm_completed", "zip_buffer", "finalize_called", "is_phenotype_generation"
         ]
         for key in keys_to_reset:
             if key in st.session_state:
@@ -464,7 +459,7 @@ def app():
             st.session_state["generation_method_selected"] = True
 
     elif matrix_option == "Матрица задана":
-        uploaded_file = st.file_uploader("Загрузите файл матрицы", type="txt")
+        uploaded_file = st.file_uploader("Загрузите файл матрицы", type="txt", on_change=reset_algorithm_state)
         if uploaded_file is not None:
             matrix_of_all_iterations = process_uploaded_file(uploaded_file)
             if matrix_of_all_iterations is not None:
@@ -493,13 +488,14 @@ def app():
                     st.session_state["Pk"] = Pk
                     st.session_state["Pm"] = Pm
                     st.session_state["generation_method_selected"] = True
-        else:
-            if "generation_method_selected" in st.session_state:
-                del st.session_state["generation_method_selected"]
-            if "generation_method" in st.session_state:
-                del st.session_state["generation_method"]
-            if "algorithm_option" in st.session_state:
-                del st.session_state["algorithm_option"]
+    else:
+        reset_algorithm_state()
+        if "generation_method_selected" in st.session_state:
+            del st.session_state["generation_method_selected"]
+        if "generation_method" in st.session_state:
+            del st.session_state["generation_method"]
+        if "algorithm_option" in st.session_state:
+            del st.session_state["algorithm_option"]
 
     if st.session_state.get("generation_method_selected"):
         generation_method = st.selectbox("Выберите метод генерации особей:",
@@ -509,6 +505,7 @@ def app():
             st.session_state["generation_method"] = generation_method
 
         if st.session_state.get("generation_method") == "Рандомные особи":
+            st.session_state["is_phenotype_generation"] = False
             if st.button("Начать работу"):
                 second_line_individual = np.random.randint(0, 256,
                                                            (st.session_state["Z"], st.session_state["m"])).astype(
@@ -521,6 +518,7 @@ def app():
                 st.experimental_rerun()
 
         elif st.session_state.get("generation_method") == "Генерация особей с помощью Плотникова-Зверева":
+            st.session_state["is_phenotype_generation"] = True
             algorithm_option = st.selectbox("Выберите алгоритм Плотникова-Зверева:",
                                             ("", "Алгоритм Плотникова-Зверева по минимаксному критерию",
                                              "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером"))
@@ -615,6 +613,8 @@ def app():
                                       second_line_individual)
 
     if st.session_state.get('algorithm_completed'):
+        if not st.session_state.get('is_phenotype_generation', False):
+            st.write(st.session_state['progress_log'][-2])
         st.write(st.session_state['final_msg'])
         st.download_button(
             label="Скачать все файлы",
