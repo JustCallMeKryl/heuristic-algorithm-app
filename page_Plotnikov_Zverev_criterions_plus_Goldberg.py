@@ -172,7 +172,7 @@ def track_progress(counter_individual, best_phenotype_for_top_counter, top_count
 
 
 def finalize_tracking(progress_log_Goldberg, start_time, end_time, second_line_individual, m, n, scope_matrix,
-                      sorted_matrix, individual_phenotypes):
+                      sorted_matrix, individual_phenotypes, progress_placeholder):
     if 'finalize_called' not in st.session_state:
         st.session_state['finalize_called'] = True
         elapsed_time = end_time - start_time
@@ -193,6 +193,11 @@ def finalize_tracking(progress_log_Goldberg, start_time, end_time, second_line_i
 
         zip_buffer = download_files_as_zip(progress_log_Goldberg, progress_distribution_file)
         st.session_state['zip_buffer'] = zip_buffer
+    elif 'progress_log' not in st.session_state:
+        st.session_state['progress_log'] = progress_log_Goldberg
+
+    # Clear the progress_placeholder content
+    progress_placeholder.empty()
 
 
 def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix, number_of_alg, second_line_individual):
@@ -268,7 +273,7 @@ def run_algorithm(Z, m, n, Zi, Pk, Pm, sorted_matrix, scope_matrix, number_of_al
 
     end_time = time.perf_counter()
     finalize_tracking(progress_log_Goldberg, start_time, end_time, second_line_individual, m, n, scope_matrix,
-                      sorted_matrix, individual_phenotypes)
+                      sorted_matrix, individual_phenotypes, progress_placeholder)
 
 
 def generate_matrix(m, n, T1, T2):
@@ -528,7 +533,6 @@ def app():
 
             if st.session_state.get("algorithm_option"):
                 if st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию":
-                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию...")
 
                     second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     minimax_criterion_number_distribution, max_load = find_minimax_criterion(
@@ -570,7 +574,6 @@ def app():
 
                 elif st.session_state[
                     "algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
-                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию с барьером...")
 
                     second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     min_elements = np.min(st.session_state["sorted_matrix"], axis=1)
@@ -613,7 +616,8 @@ def app():
                                       second_line_individual)
 
     if st.session_state.get('algorithm_completed'):
-        if not st.session_state.get('is_phenotype_generation', False):
+        # Check if the log is not empty before trying to access it
+        if 'progress_log' in st.session_state and len(st.session_state['progress_log']) > 1:
             st.write(st.session_state['progress_log'][-2])
         st.write(st.session_state['final_msg'])
         st.download_button(
