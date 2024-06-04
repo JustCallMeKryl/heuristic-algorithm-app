@@ -416,6 +416,13 @@ def reset_algorithm_state():
             del st.session_state[key]
 
 
+def reset_algorithm_state_before_run():
+    keys_to_reset = ["progress_log", "final_msg", "zip_buffer", "algorithm_completed", "finalize_called"]
+    for key in keys_to_reset:
+        if key in st.session_state:
+            del st.session_state[key]
+
+
 def app():
     if "initialized" not in st.session_state:
         reset_state()
@@ -512,6 +519,7 @@ def app():
         if st.session_state.get("generation_method") == "Рандомные особи":
             st.session_state["is_phenotype_generation"] = False
             if st.button("Начать работу"):
+                reset_algorithm_state_before_run()  # Сброс состояния перед запуском алгоритма
                 second_line_individual = np.random.randint(0, 256,
                                                            (st.session_state["Z"], st.session_state["m"])).astype(
                     np.int32)
@@ -533,6 +541,7 @@ def app():
 
             if st.session_state.get("algorithm_option"):
                 if st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию":
+                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию...")
 
                     second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     minimax_criterion_number_distribution, max_load = find_minimax_criterion(
@@ -563,6 +572,7 @@ def app():
                                                           max_value=99, value=10, key="choice_slice_number_minimax")
 
                     if st.button("Подтвердить и начать алгоритм"):
+                        reset_algorithm_state_before_run()  # Сброс состояния перед запуском алгоритма
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
                         second_line_individual[:slice_number] = np.random.randint(0, 256, (
                             slice_number, st.session_state["m"])).astype(np.int32)
@@ -574,6 +584,7 @@ def app():
 
                 elif st.session_state[
                     "algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
+                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию с барьером...")
 
                     second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     min_elements = np.min(st.session_state["sorted_matrix"], axis=1)
@@ -606,6 +617,7 @@ def app():
                                                           key="choice_slice_number_extra_minimax")
 
                     if st.button("Подтвердить и начать алгоритм"):
+                        reset_algorithm_state_before_run()  # Сброс состояния перед запуском алгоритма
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
                         second_line_individual[:slice_number] = np.random.randint(0, 256, (
                             slice_number, st.session_state["m"])).astype(np.int32)
