@@ -437,6 +437,16 @@ def app():
             if key in st.session_state:
                 del st.session_state[key]
 
+    # Добавлено для удаления данных при смене метода генерации особей
+    def reset_generation_method():
+        keys_to_reset = [
+            "generation_method", "algorithm_option", "progress_log", "distribution_file",
+            "final_msg", "algorithm_completed", "zip_buffer", "finalize_called", "is_phenotype_generation"
+        ]
+        for key in keys_to_reset:
+            if key in st.session_state:
+                del st.session_state[key]
+
     st.title('Алгоритм П-З + Голдберга')
 
     matrix_option = st.selectbox("Выберите источник матрицы:", ("", "Генерация новой матрицы", "Матрица задана"))
@@ -511,7 +521,8 @@ def app():
 
     if st.session_state.get("generation_method_selected"):
         generation_method = st.selectbox("Выберите метод генерации особей:",
-                                         ("", "Рандомные особи", "Генерация особей с помощью Плотникова-Зверева"))
+                                         ("", "Рандомные особи", "Генерация особей с помощью Плотникова-Зверева"),
+                                         on_change=reset_generation_method)
 
         if generation_method:
             st.session_state["generation_method"] = generation_method
