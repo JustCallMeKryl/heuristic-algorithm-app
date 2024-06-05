@@ -456,17 +456,21 @@ def app():
 
     st.title('Алгоритм П-З + Голдберга')
 
-    matrix_option = st.selectbox("Выберите источник матрицы:", ("", "Генерация новой матрицы", "Матрица задана"), on_change=reset_on_change)
+    matrix_option = st.selectbox("Выберите источник матрицы:", ("", "Генерация новой матрицы", "Матрица задана"),
+                                 on_change=reset_on_change)
 
     if matrix_option == "Генерация новой матрицы":
         m = st.number_input("Количество строк матрицы (m)", min_value=1, value=20, step=1, on_change=reset_on_change)
         n = st.number_input("Количество столбцов матрицы (n)", min_value=1, value=3, step=1, on_change=reset_on_change)
         T1 = st.number_input("Начало диапазона значений (T1)", min_value=1, value=10, step=1, on_change=reset_on_change)
-        T2 = st.number_input("Конец диапазона значений (T2)", min_value=T1 + 1, value=20, step=1, on_change=reset_on_change)
+        T2 = st.number_input("Конец диапазона значений (T2)", min_value=T1 + 1, value=20, step=1,
+                             on_change=reset_on_change)
         Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1, on_change=reset_on_change)
         Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1, on_change=reset_on_change)
-        Pk = st.number_input("Вероятность кроссовера (Pk)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, on_change=reset_on_change)
-        Pm = st.number_input("Вероятность мутации (Pm)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, on_change=reset_on_change)
+        Pk = st.number_input("Вероятность кроссовера (Pk)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
+                             on_change=reset_on_change)
+        Pm = st.number_input("Вероятность мутации (Pm)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
+                             on_change=reset_on_change)
 
         if st.button("Сгенерировать матрицу"):
             original_matrix, sorted_matrix = generate_matrix(m, n, T1, T2)
@@ -494,10 +498,14 @@ def app():
                 scope_matrix = np.zeros(2 * n, dtype=np.int32)
                 find_scope_matrix(n, scope_matrix)
 
-                Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1, on_change=reset_on_change)
-                Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1, on_change=reset_on_change)
-                Pk = st.number_input("Вероятность кроссовера (Pk)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, on_change=reset_on_change)
-                Pm = st.number_input("Вероятность мутации (Pm)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, on_change=reset_on_change)
+                Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1,
+                                    on_change=reset_on_change)
+                Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1,
+                                     on_change=reset_on_change)
+                Pk = st.number_input("Вероятность кроссовера (Pk)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
+                                     on_change=reset_on_change)
+                Pm = st.number_input("Вероятность мутации (Pm)", min_value=0.0, max_value=1.0, value=0.5, step=0.01,
+                                     on_change=reset_on_change)
 
                 if st.button("Продолжить"):
                     st.session_state["original_matrix"] = matrix_of_all_iterations
@@ -531,7 +539,9 @@ def app():
             st.session_state["is_phenotype_generation"] = False
             if st.button("Начать работу"):
                 reset_algorithm_state_before_run()  # Сброс состояния перед запуском алгоритма
-                second_line_individual = np.random.randint(0, 256, (st.session_state["Z"], st.session_state["m"])).astype(np.int32)
+                second_line_individual = np.random.randint(0, 256,
+                                                           (st.session_state["Z"], st.session_state["m"])).astype(
+                    np.int32)
                 run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                               st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
                               st.session_state["sorted_matrix"], st.session_state["scope_matrix"], 0,
@@ -550,7 +560,6 @@ def app():
 
             if st.session_state.get("algorithm_option"):
                 if st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию":
-                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию...")
 
                     second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     minimax_criterion_number_distribution, max_load = find_minimax_criterion(
@@ -577,21 +586,24 @@ def app():
                         unsafe_allow_html=True
                     )
 
-                    choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1, max_value=99, value=10,
-                                                          key="choice_slice_number_minimax", on_change=reset_on_ratio_change)
+                    choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1,
+                                                          max_value=99, value=10,
+                                                          key="choice_slice_number_minimax",
+                                                          on_change=reset_on_ratio_change)
 
                     if st.button("Подтвердить и начать алгоритм"):
-                        reset_algorithm_state_before_run()  # Сброс состояния перед запуском алгоритма
+                        reset_algorithm_state_before_run()
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
-                        second_line_individual[:slice_number] = np.random.randint(0, 256, (slice_number, st.session_state["m"])).astype(np.int32)
+                        second_line_individual[:slice_number] = np.random.randint(0, 256, (
+                        slice_number, st.session_state["m"])).astype(np.int32)
 
                         run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                                       st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
                                       st.session_state["sorted_matrix"], st.session_state["scope_matrix"], 1,
                                       second_line_individual)
 
-                elif st.session_state["algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
-                    st.write("Выполнение алгоритма Плотникова-Зверева по минимаксному критерию с барьером...")
+                elif st.session_state[
+                    "algorithm_option"] == "Алгоритм Плотникова-Зверева по минимаксному критерию с барьером":
 
                     second_line_individual = np.zeros((st.session_state["Z"], st.session_state["m"]), dtype=np.int32)
                     min_elements = np.min(st.session_state["sorted_matrix"], axis=1)
@@ -619,13 +631,16 @@ def app():
                         unsafe_allow_html=True
                     )
 
-                    choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1, max_value=99, value=10,
-                                                          key="choice_slice_number_extra_minimax", on_change=reset_on_ratio_change)
+                    choice_slice_number = st.number_input("Введите % соотношение подмешивания особей", min_value=1,
+                                                          max_value=99, value=10,
+                                                          key="choice_slice_number_extra_minimax",
+                                                          on_change=reset_on_ratio_change)
 
                     if st.button("Подтвердить и начать алгоритм"):
-                        reset_algorithm_state_before_run()  # Сброс состояния перед запуском алгоритма
+                        reset_algorithm_state_before_run()
                         slice_number = int(st.session_state["Z"] * choice_slice_number / 100)
-                        second_line_individual[:slice_number] = np.random.randint(0, 256, (slice_number, st.session_state["m"])).astype(np.int32)
+                        second_line_individual[:slice_number] = np.random.randint(0, 256, (
+                        slice_number, st.session_state["m"])).astype(np.int32)
 
                         run_algorithm(st.session_state["Z"], st.session_state["m"], st.session_state["n"],
                                       st.session_state["Zi"], st.session_state["Pk"], st.session_state["Pm"],
@@ -633,7 +648,6 @@ def app():
                                       second_line_individual)
 
     if st.session_state.get('algorithm_completed'):
-        # Check if the log is not empty before trying to access it
         if 'progress_log' in st.session_state and len(st.session_state['progress_log']) > 1:
             st.write(st.session_state['progress_log'][-2])
         st.write(st.session_state['final_msg'])
@@ -643,6 +657,7 @@ def app():
             file_name="results.zip",
             mime="application/zip"
         )
+
 
 if __name__ == "__main__":
     app()
