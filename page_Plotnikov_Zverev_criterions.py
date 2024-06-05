@@ -111,7 +111,7 @@ def display_matrices():
             st.write(minimax_criterion_number_distribution)
 
         st.markdown(
-            f"<p style='font-size:24px; font-weight:bold; text-align: center; margin-left: -60px;'>MAX из массива нагрузки: {max_load}</p>",
+            f"<p style='font-size:24px; font-weight:bold; text-align: center; margin-left: -60px;'>MAX из массива загрузки: {max_load}</p>",
             unsafe_allow_html=True
         )
 
