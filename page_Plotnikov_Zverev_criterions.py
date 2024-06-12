@@ -96,19 +96,24 @@ def display_matrices():
         minimax_criterion_number_distribution = st.session_state["minimax_criterion_number_distribution"]
         max_load = st.session_state["max_load"]
 
-        col1, col2, col3 = st.columns(3)
+        m, n = original_matrix.shape
 
-        with col1:
-            st.write("Сгенерированная матрица")
-            st.write(original_matrix)
+        # Проверка на размер матрицы перед отображением
+        if m <= 30 and n <= 5:
 
-        with col2:
-            st.write("Отсортированная матрица")
-            st.write(sorted_matrix)
+            col1, col2, col3 = st.columns(3)
 
-        with col3:
-            st.write("Распределение по приборам")
-            st.write(minimax_criterion_number_distribution)
+            with col1:
+                st.write("Сгенерированная матрица")
+                st.write(original_matrix)
+
+            with col2:
+                st.write("Отсортированная матрица")
+                st.write(sorted_matrix)
+
+            with col3:
+                st.write("Распределение по приборам")
+                st.write(minimax_criterion_number_distribution)
 
         st.markdown(
             f"<p style='font-size:24px; font-weight:bold; text-align: center; margin-left: -60px;'>MAX из массива загрузки: {max_load}</p>",
@@ -129,8 +134,10 @@ def display_matrices():
 
         zip_buffer.seek(0)
 
+        col1_download, col2_download, col3_download = st.columns(3)
+
         # Кнопка для скачивания ZIP файла
-        col2.download_button(
+        col2_download.download_button(
             label="Скачать матрицы",
             data=zip_buffer,
             file_name='matrices.zip',
