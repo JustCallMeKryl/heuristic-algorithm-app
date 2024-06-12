@@ -567,19 +567,20 @@ def app():
                         st.session_state["m"], st.session_state["n"], st.session_state["Z"]
                     )
 
-                    col1, col2, col3 = st.columns(3)
+                    if st.session_state["m"] <= 30 and st.session_state["n"] <= 5:
+                        col1, col2, col3 = st.columns(3)
 
-                    with col1:
-                        st.write("Изначальная матрица")
-                        st.write(st.session_state["original_matrix"])
+                        with col1:
+                            st.write("Изначальная матрица")
+                            st.write(st.session_state["original_matrix"])
 
-                    with col2:
-                        st.write("Отсортированная матрица")
-                        st.write(st.session_state["sorted_matrix"])
+                        with col2:
+                            st.write("Отсортированная матрица")
+                            st.write(st.session_state["sorted_matrix"])
 
-                    with col3:
-                        st.write("Распределение чисел")
-                        st.write(minimax_criterion_number_distribution)
+                        with col3:
+                            st.write("Распределение чисел")
+                            st.write(minimax_criterion_number_distribution)
 
                     st.markdown(
                         f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",
@@ -612,19 +613,20 @@ def app():
                         sum_of_min_elements, second_line_individual, st.session_state["scope_matrix"]
                     )
 
-                    col1, col2, col3 = st.columns(3)
+                    if st.session_state["m"] <= 30 and st.session_state["n"] <= 5:
+                        col1, col2, col3 = st.columns(3)
 
-                    with col1:
-                        st.write("Изначальная матрица")
-                        st.write(st.session_state["original_matrix"])
+                        with col1:
+                            st.write("Изначальная матрица")
+                            st.write(st.session_state["original_matrix"])
 
-                    with col2:
-                        st.write("Отсортированная матрица")
-                        st.write(st.session_state["sorted_matrix"])
+                        with col2:
+                            st.write("Отсортированная матрица")
+                            st.write(st.session_state["sorted_matrix"])
 
-                    with col3:
-                        st.write("Распределение чисел")
-                        st.write(extra_minimax_criterion_number_distribution)
+                        with col3:
+                            st.write("Распределение чисел")
+                            st.write(extra_minimax_criterion_number_distribution)
 
                     st.markdown(
                         f"<p style='font-size:24px; font-weight:bold; text-align: center;'>MAX из массива нагрузки: {max_load}</p>",

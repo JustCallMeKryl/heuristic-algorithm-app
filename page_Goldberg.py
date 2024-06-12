@@ -322,11 +322,14 @@ def app():
 
         if st.button("Начать процесс"):
             original_matrix, sorted_matrix = generate_matrix(m, n, T1, T2)
-            col1, col2 = st.columns(2)
-            with col1:
-                display_matrix(original_matrix, "Сгенерированная матрица:")
-            with col2:
-                display_matrix(sorted_matrix, "Отсортированная матрица:")
+
+            m, n = original_matrix.shape
+            if m <= 30 and n <= 5:
+                col1, col2 = st.columns(2)
+                with col1:
+                    display_matrix(original_matrix, "Сгенерированная матрица:")
+                with col2:
+                    display_matrix(sorted_matrix, "Отсортированная матрица:")
 
             scope_matrix = np.zeros(2 * n, dtype=np.int32)
             find_scope_matrix(n, scope_matrix)
@@ -340,11 +343,14 @@ def app():
         if matrix_of_all_iterations is not None:
             m, n = matrix_of_all_iterations.shape
             sorted_matrix = np.array(sorted(matrix_of_all_iterations, key=lambda x: sum(x), reverse=True))
-            col1, col2 = st.columns(2)
-            with col1:
-                display_matrix(matrix_of_all_iterations, "Загруженная матрица:")
-            with col2:
-                display_matrix(sorted_matrix, "Отсортированная матрица:")
+
+            if m <= 30 and n <= 5:
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    display_matrix(matrix_of_all_iterations, "Загруженная матрица:")
+                with col2:
+                    display_matrix(sorted_matrix, "Отсортированная матрица:")
 
             Z = st.number_input("Количество особей (Z)", min_value=100, value=1000, step=1)
             Zi = st.number_input("Количество повторов (Zi)", min_value=1, value=100, step=1)
